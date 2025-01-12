@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider Web Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        canvas {
+            background-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="radarChart" width="400" height="400"></canvas>
+
+    <script>
+        var radarChart;
+
+        // Google Sheets API settings
+        var apiKey = 'AIzaSyDr3OJAHpofita08liYG-3eri8Vb51rfWw'; // Your API Key
+        var spreadsheetId = '1dSj2ZXowr3ETE7O9aR5-kEtBKlJLpPyKBzj68uBehk8'; // Your Spreadsheet ID
+        var range = 'Sheet28!A2:B6'; // The range in the sheet (adjust as necessary)
+
+        // Load the Google API client and authenticate
+        function loadClient() {
+            gapi.client.setApiKey(apiKey);
+            return gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4')
+                .then(fetchSheetData);
+        }
+
+        // Fetch data from the Google Sheet
+        function fetchSheetData() {
+            var request = gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: spreadsheetId,
+                range: range
+            });
+
+            request.then(function (response) {
+                var data = response.result.values;
+                if (data && data.length > 0) {
+                    console.log("Data from Google Sheets:", data);
+                    var labels = data.map(row => row[0]); // First column as labels
+                    var values = data.map(row => parseFloat(row[1])); // Second column as values
+
+                    // Update the radar chart with the fetched data
+                    updateRadarChart(labels, values);
+                } else {
+                    console.log("No data found.");
+                }
+            }, function (error) {
+                console.error("Error fetching sheet data: " + error.result.error.message);
+            });
+        }
+
+        // Initialize and create the radar chart
+        function initializeChart(labels, values) {
+            var ctx = document.getElementById('radarChart').getContext('2d');
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Character Attributes',
+                        data: values,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        fill: true,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to update the radar chart with new data
+        function updateRadarChart(labels, values) {
+            if (!radarChart) {
+                initializeChart(labels, values);
+            } else {
+                radarChart.data.labels = labels;
+                radarChart.data.datasets[0].data = values;
+                radarChart.update();
+            }
+        }
+
+        // Load the Google API client on window load
+        window.onload = function () {
+            gapi.load('client', loadClient);
+        };
+
+    </script>
+
+</body>
+</html>
